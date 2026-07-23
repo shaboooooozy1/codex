@@ -307,3 +307,29 @@ closest `pyproject.toml`'s `requires-python` field to see what minimum runtime v
 ## Platform Support
 
 Tests and features must support Linux, macOS and Windows unless feature is explicitly OS-specific.
+
+## Cursor Cloud specific instructions
+
+The product is the `codex` CLI/TUI (Rust workspace in `codex-rs/`). Build/lint/test/run commands
+are documented in `docs/install.md` and the `codex-rs` guidance above; use the root `just` helpers
+(`just codex`, `just test -p <crate>`, `just fix -p <crate>`, `just fmt`). `just` uses
+`cargo-nextest`, so `just test` needs `cargo-nextest` installed.
+
+Non-obvious notes:
+
+- Toolchain resolution is directory-based. The pinned toolchain (`1.95.0`) lives in
+  `codex-rs/rust-toolchain.toml`, so from the repo root `cargo` resolves to the older rustup
+  default. Run cargo from inside `codex-rs/`, or use `cargo +1.95.0 ... --manifest-path codex-rs/Cargo.toml`.
+- System libraries are required to build (openssl-sys, libcap, musl): `libssl-dev`, `libcap-dev`,
+  `pkg-config`, `clang`, `musl-tools` (see `.devcontainer/Dockerfile`). They are baked into the VM
+  snapshot; if a build fails with `Could not find openssl via pkg-config` or a libcap error,
+  reinstall them with apt.
+- The debug `codex` binary is large (~1.3 GB) and the first full build takes several minutes; this
+  is expected. Don't kill long-running cargo/nextest commands.
+- There is no live model backend and no credentials in this environment. To exercise the agent
+  end-to-end offline, point Codex at a mock Responses server (same approach the integration tests
+  use in `core/tests/common/responses.rs`) via config overrides, e.g.
+  `codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -c model_provider=mock -c model_providers.mock.base_url="http://127.0.0.1:PORT/v1" -c model_providers.mock.wire_api="responses" -c model_providers.mock.experimental_bearer_token="test"`.
+  The mock must serve `POST /v1/responses` as `text/event-stream`; a `shell_command` function-call
+  item makes the agent actually run a command. For real usage, set `OPENAI_API_KEY` or run
+  `codex login`.
