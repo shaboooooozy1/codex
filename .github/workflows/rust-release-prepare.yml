@@ -38,13 +38,14 @@ jobs:
           user_agent="codex_cli_rs/99.99.99 (Linux $(uname -r); $(uname -m)) ${terminal_info}"
           base_url="${OPENAI_BASE_URL:-https://chatgpt.com/backend-api/codex}"
 
-          headers=(
-            -H "Authorization: Bearer ${OPENAI_API_KEY}"
-            -H "User-Agent: ${user_agent}"
-          )
+          # Keep the bearer token out of curl's argv (visible via /proc and
+          # process listings) by passing it through a 0600 config file.
+          config_file="$(mktemp)"
+          trap 'rm -f "$config_file"' EXIT
+          printf 'header = "Authorization: Bearer %s"\n' "${OPENAI_API_KEY}" > "$config_file"
 
           url="${base_url%/}/models?client_version=${client_version}"
-          curl --http1.1 --fail --show-error --location "${headers[@]}" "${url}" | jq '.' > codex-rs/models-manager/models.json
+          curl --http1.1 --fail --show-error --location --config "$config_file" -H "User-Agent: ${user_agent}" "${url}" | jq '.' > codex-rs/models-manager/models.json
 
       - name: Open pull request (if changed)
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
