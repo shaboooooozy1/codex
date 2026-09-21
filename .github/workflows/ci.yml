@@ -56,13 +56,10 @@ jobs:
           # release branch, then derive the matching release version from that
           # branch so staged package metadata matches downloaded artifacts.
           IFS=$'\t' read -r WORKFLOW_URL RELEASE_BRANCH < <(
-            gh run list \
-              --repo openai/codex \
-              --workflow .github/workflows/rust-release.yml \
-              --status success \
-              --json url,headBranch,databaseId \
-              --limit 200 \
-              --jq 'map(select(.headBranch != null and (.headBranch | startswith("rust-v")))) | sort_by(.databaseId) | reverse | first | [.url, .headBranch] | @tsv'
+            gh api repos/openai/codex/actions/workflows/rust-release.yml/runs \
+              --paginate \
+              -f per_page=100 \
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion == "success") | select(.head_branch != null and (.head_branch | startswith("rust-v"))) | {url: .html_url, headBranch: .head_branch, completedAt: .updated_at}] | sort_by(.completedAt) | reverse | first | [.url, .headBranch] | @tsv'
           )
           if [[ -z "${WORKFLOW_URL}" || -z "${RELEASE_BRANCH}" ]]; then
             echo "Unable to locate a successful rust-release run on a rust-v* branch in openai/codex" >&2
