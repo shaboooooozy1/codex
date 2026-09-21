@@ -61,7 +61,7 @@ jobs:
               --workflow .github/workflows/rust-release.yml \
               --status success \
               --json url,headBranch,updatedAt \
-              --limit 20 \
+              --limit 200 \
               --jq 'map(select(.headBranch != null and (.headBranch | startswith("rust-v")))) | sort_by(.updatedAt) | reverse | first | [.url, .headBranch] | @tsv'
           )
           if [[ -z "${WORKFLOW_URL}" || -z "${RELEASE_BRANCH}" ]]; then
