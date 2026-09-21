@@ -60,9 +60,9 @@ jobs:
               --repo openai/codex \
               --workflow .github/workflows/rust-release.yml \
               --status success \
-              --json url,headBranch \
+              --json url,headBranch,createdAt \
               --limit 20 \
-              --jq 'first(.[] | select(.headBranch != null and (.headBranch | startswith("rust-v")))) | [.url, .headBranch] | @tsv'
+              --jq 'map(select(.headBranch != null and (.headBranch | startswith("rust-v")))) | sort_by(.createdAt) | reverse | first | [.url, .headBranch] | @tsv'
           )
           if [[ -z "${WORKFLOW_URL}" || -z "${RELEASE_BRANCH}" ]]; then
             echo "Unable to locate a successful rust-release run on a rust-v* branch in openai/codex" >&2
