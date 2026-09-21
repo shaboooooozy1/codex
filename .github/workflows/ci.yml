@@ -52,12 +52,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Use a recent successful rust-release run that published the full
+          # Use the latest successful rust-release run that published the full
           # cross-platform native payload required by the npm package layout.
-          # Passing the workflow URL directly avoids relying on old rust-v*
-          # branches remaining discoverable via `gh run list --branch ...`.
           CODEX_VERSION=0.133.0-alpha.4
-          WORKFLOW_URL="https://github.com/openai/codex/actions/runs/26201494185"
+          WORKFLOW_URL="$(
+            gh run list \
+              --repo openai/codex \
+              --workflow .github/workflows/rust-release.yml \
+              --status success \
+              --json url \
+              --limit 1 \
+              --jq 'first(.[]).url'
+          )"
+          if [[ -z "${WORKFLOW_URL}" || "${WORKFLOW_URL}" == "null" ]]; then
+            echo "Unable to locate a successful rust-release workflow run in openai/codex" >&2
+            exit 1
+          fi
           OUTPUT_DIR="${RUNNER_TEMP}"
           python3 ./scripts/stage_npm_packages.py \
             --release-version "$CODEX_VERSION" \
