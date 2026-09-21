@@ -52,9 +52,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Use the latest published rust release so workflow artifacts are
+          # Use the latest published rust-v* release so workflow artifacts are
           # still retained and downloadable.
-          CODEX_VERSION="$(gh release view --repo openai/codex --json tagName --jq '.tagName | sub(\"^rust-v\"; \"\")')"
+          RUST_TAG="$(gh release list --repo openai/codex --limit 100 --json tagName --jq 'map(select(.tagName | startswith(\"rust-v\"))) | .[0].tagName // empty')"
+          if [[ -z "$RUST_TAG" ]]; then
+            echo "Unable to find a rust-v* release in openai/codex" >&2
+            exit 1
+          fi
+          CODEX_VERSION="${RUST_TAG#rust-v}"
           OUTPUT_DIR="${RUNNER_TEMP}"
           python3 ./scripts/stage_npm_packages.py \
             --release-version "$CODEX_VERSION" \
