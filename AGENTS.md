@@ -330,6 +330,9 @@ Non-obvious notes:
   end-to-end offline, point Codex at a mock Responses server (same approach the integration tests
   use in `core/tests/common/responses.rs`) via config overrides, e.g.
   `codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -c model_provider=mock -c model_providers.mock.base_url="http://127.0.0.1:PORT/v1" -c model_providers.mock.wire_api="responses" -c model_providers.mock.experimental_bearer_token="test"`.
+  `--dangerously-bypass-approvals-and-sandbox` is only appropriate inside a disposable VM/container
+  with no real credentials mounted (the Cursor Cloud VM described here); outside that setting keep the
+  default sandbox/approval policy or use `--sandbox workspace-write`.
   The mock must serve `POST /v1/responses` as `text/event-stream`; a `shell_command` function-call
   item makes the agent actually run a command. For real usage, set `OPENAI_API_KEY` or run
   `codex login`.
