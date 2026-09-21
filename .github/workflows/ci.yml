@@ -52,18 +52,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Resolve the latest successful rust-release run dynamically so we
-          # always use a fresh set of cross-platform native artifacts.
+          # Resolve the latest successful rust-release run for this release
+          # branch so we stage native artifacts that match CODEX_VERSION.
           CODEX_VERSION=0.133.0-alpha.4
           WORKFLOW_ID="$(gh run list \
             --repo openai/codex \
             --workflow rust-release.yml \
+            --branch "rust-v${CODEX_VERSION}" \
             --status success \
             --limit 1 \
             --json databaseId \
             --jq '.[0].databaseId')"
           if [ -z "$WORKFLOW_ID" ] || [ "$WORKFLOW_ID" = "null" ]; then
-            echo "Unable to resolve a successful openai/codex rust-release workflow run" >&2
+            echo "Unable to resolve a successful openai/codex rust-release workflow run for rust-v${CODEX_VERSION}" >&2
             exit 1
           fi
           WORKFLOW_URL="https://github.com/openai/codex/actions/runs/${WORKFLOW_ID}"
