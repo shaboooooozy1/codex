@@ -52,12 +52,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Use a recent successful rust-release run that published the full
-          # cross-platform native payload required by the npm package layout.
-          # Passing the workflow URL directly avoids relying on old rust-v*
-          # branches remaining discoverable via `gh run list --branch ...`.
-          CODEX_VERSION=0.133.0-alpha.4
-          WORKFLOW_URL="https://github.com/openai/codex/actions/runs/26201494185"
+          # Use the latest successful rust-release run published from a rust-v*
+          # release branch, then derive the matching release version from that
+          # branch so staged package metadata matches downloaded artifacts.
+          IFS=$'\t' read -r WORKFLOW_URL RELEASE_BRANCH < <(
+            gh api repos/openai/codex/actions/workflows/rust-release.yml/runs \
+              --paginate \
+              -f per_page=100 \
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion == "success") | select(.head_branch != null and (.head_branch | startswith("rust-v"))) | {url: .html_url, headBranch: .head_branch, startedAt: .run_started_at}] | sort_by(.startedAt) | reverse | first | [.url, .headBranch] | @tsv'
+          )
+          if [[ -z "${WORKFLOW_URL}" || -z "${RELEASE_BRANCH}" ]]; then
+            echo "Unable to locate a successful rust-release run on a rust-v* branch in openai/codex" >&2
+            exit 1
+          fi
+          CODEX_VERSION="${RELEASE_BRANCH#rust-v}"
           OUTPUT_DIR="${RUNNER_TEMP}"
           python3 ./scripts/stage_npm_packages.py \
             --release-version "$CODEX_VERSION" \
