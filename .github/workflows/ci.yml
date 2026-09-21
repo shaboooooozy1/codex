@@ -59,7 +59,7 @@ jobs:
             gh api repos/openai/codex/actions/workflows/rust-release.yml/runs \
               --paginate \
               -f per_page=100 \
-              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion == "success") | select(.head_branch != null and (.head_branch | startswith("rust-v"))) | {url: .html_url, headBranch: .head_branch, completedAt: .updated_at}] | sort_by(.completedAt) | reverse | first | [.url, .headBranch] | @tsv'
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion == "success") | select(.head_branch != null and (.head_branch | startswith("rust-v"))) | {url: .html_url, headBranch: .head_branch, startedAt: .run_started_at}] | sort_by(.startedAt) | reverse | first | [.url, .headBranch] | @tsv'
           )
           if [[ -z "${WORKFLOW_URL}" || -z "${RELEASE_BRANCH}" ]]; then
             echo "Unable to locate a successful rust-release run on a rust-v* branch in openai/codex" >&2
