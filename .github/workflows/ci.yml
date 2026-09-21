@@ -55,11 +55,10 @@ jobs:
           # Use the latest successful rust-release run that published the full
           # cross-platform native payload required by the npm package layout.
           WORKFLOW_INFO="$(
-            gh api --paginate repos/openai/codex/actions/workflows/rust-release.yml/runs \
+            gh api --paginate --slurp repos/openai/codex/actions/workflows/rust-release.yml/runs \
               -f status=completed \
               -f conclusion=success \
-              --jq '.workflow_runs[] | select(.head_branch | startswith("rust-v")) | [.html_url, .head_branch] | @tsv' \
-              | head -n1
+              --jq 'map(.workflow_runs[]) | map(select(.head_branch | startswith("rust-v"))) | .[0] | select(.) | [.html_url, .head_branch] | @tsv'
           )"
           if [ -z "$WORKFLOW_INFO" ]; then
             echo "No successful openai/codex rust-release workflow runs found" >&2
