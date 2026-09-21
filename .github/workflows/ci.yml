@@ -57,7 +57,7 @@ jobs:
           WORKFLOW_INFO="$(gh api repos/openai/codex/actions/workflows/rust-release.yml/runs \
             -f status=completed \
             -f conclusion=success \
-            -f per_page=10 \
+            -f per_page=100 \
             --jq '.workflow_runs | map(select(.head_branch | startswith("rust-v"))) | sort_by(.created_at) | reverse | .[0] | select(.) | [.html_url, .head_branch] | @tsv')"
           if [ -z "$WORKFLOW_INFO" ]; then
             echo "No successful openai/codex rust-release workflow runs found" >&2
