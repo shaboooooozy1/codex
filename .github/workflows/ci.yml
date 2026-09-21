@@ -58,15 +58,14 @@ jobs:
             gh api --paginate repos/openai/codex/actions/workflows/rust-release.yml/runs \
               -f status=completed \
               -f conclusion=success \
-              --jq '.workflow_runs[] | select(.head_branch | startswith("rust-v")) | [.created_at, .html_url, .head_branch] | @tsv' \
-              | sort -r \
+              --jq '.workflow_runs[] | select(.head_branch | startswith("rust-v")) | [.html_url, .head_branch] | @tsv' \
               | head -n1
           )"
           if [ -z "$WORKFLOW_INFO" ]; then
             echo "No successful openai/codex rust-release workflow runs found" >&2
             exit 1
           fi
-          IFS=$'\t' read -r _ WORKFLOW_URL WORKFLOW_BRANCH <<<"$WORKFLOW_INFO"
+          IFS=$'\t' read -r WORKFLOW_URL WORKFLOW_BRANCH <<<"$WORKFLOW_INFO"
           case "$WORKFLOW_BRANCH" in
             rust-v*) CODEX_VERSION="${WORKFLOW_BRANCH#rust-v}" ;;
             *)
